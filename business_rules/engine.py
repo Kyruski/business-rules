@@ -1,24 +1,24 @@
 from .fields import FIELD_NO_INPUT
 
-def run_all(rule_list,
+async def run_all(rule_list,
             defined_variables,
             defined_actions,
             stop_on_first_trigger=False):
 
     rule_was_triggered = False
     for rule in rule_list:
-        result = run(rule, defined_variables, defined_actions)
+        result = await run(rule, defined_variables, defined_actions)
         if result:
             rule_was_triggered = True
             if stop_on_first_trigger:
                 return True
     return rule_was_triggered
 
-def run(rule, defined_variables, defined_actions):
+async def run(rule, defined_variables, defined_actions):
     conditions, actions = rule['conditions'], rule['actions']
     rule_triggered = check_conditions_recursively(conditions, defined_variables)
     if rule_triggered:
-        do_actions(actions, defined_actions)
+        await do_actions(actions, defined_actions)
         return True
     return False
 
@@ -85,7 +85,7 @@ def _do_operator_comparison(operator_type, operator_name, comparison_value):
     return method(comparison_value)
 
 
-def do_actions(actions, defined_actions):
+async def do_actions(actions, defined_actions):
     for action in actions:
         method_name = action['name']
         def fallback(*args, **kwargs):
@@ -93,4 +93,4 @@ def do_actions(actions, defined_actions):
                     .format(method_name, defined_actions.__class__.__name__))
         params = action.get('params') or {}
         method = getattr(defined_actions, method_name, fallback)
-        method(**params)
+        await method(**params)
